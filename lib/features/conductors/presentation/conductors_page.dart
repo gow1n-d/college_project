@@ -19,29 +19,45 @@ class _ConductorsPageState extends ConsumerState<ConductorsPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(conductorsProvider);
     final theme = Theme.of(context);
+    final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Conductor Management'),
+        title: Text(isMobile ? 'Conductors' : 'Conductor Management'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
             onPressed: () => ref.read(conductorsProvider.notifier).refresh(),
           ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            icon: const Icon(Icons.person_add, size: 18),
-            label: const Text('Add Conductor'),
-            onPressed: () => _showAddConductorDialog(context),
-          ),
-          const SizedBox(width: 16),
+          if (isMobile)
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              tooltip: 'Add Conductor',
+              onPressed: () => _showAddConductorDialog(context),
+            )
+          else ...[
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              icon: const Icon(Icons.person_add, size: 18),
+              label: const Text('Add Conductor'),
+              onPressed: () => _showAddConductorDialog(context),
+            ),
+            const SizedBox(width: 16),
+          ],
         ],
       ),
+      floatingActionButton: isMobile
+          ? FloatingActionButton.extended(
+              icon: const Icon(Icons.person_add),
+              label: const Text('Add Conductor'),
+              onPressed: () => _showAddConductorDialog(context),
+            )
+          : null,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

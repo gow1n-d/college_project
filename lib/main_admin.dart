@@ -24,7 +24,8 @@ class AdminApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'College Bus Admin',
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      darkTheme: AppTheme.light,
+      themeMode: ThemeMode.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

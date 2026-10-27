@@ -145,55 +145,226 @@ class AdminShell extends ConsumerWidget {
   final Widget child;
   const AdminShell({super.key, required this.child});
 
+  static const List<({IconData icon, IconData activeIcon, String label, String path})> items = [
+    (
+      icon: Icons.dashboard_outlined,
+      activeIcon: Icons.dashboard,
+      label: 'Dashboard',
+      path: '/admin/dashboard',
+    ),
+    (
+      icon: Icons.badge_outlined,
+      activeIcon: Icons.badge,
+      label: 'Conductors',
+      path: '/admin/conductors',
+    ),
+    (
+      icon: Icons.qr_code_2_outlined,
+      activeIcon: Icons.qr_code_2,
+      label: 'Barcodes',
+      path: '/admin/barcodes',
+    ),
+    (
+      icon: Icons.people_outline,
+      activeIcon: Icons.people,
+      label: 'Students',
+      path: '/admin/students',
+    ),
+    (
+      icon: Icons.directions_bus_outlined,
+      activeIcon: Icons.directions_bus,
+      label: 'Buses',
+      path: '/admin/buses',
+    ),
+    (
+      icon: Icons.schedule_outlined,
+      activeIcon: Icons.schedule,
+      label: 'Sessions',
+      path: '/admin/sessions',
+    ),
+    (
+      icon: Icons.bar_chart_outlined,
+      activeIcon: Icons.bar_chart,
+      label: 'Reports',
+      path: '/admin/reports',
+    ),
+  ];
+
+  void _showMoreSheet(BuildContext context, WidgetRef ref, int selectedIndex) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Color(0xFFDBEAFE),
+                      child: Icon(Icons.admin_panel_settings, color: Color(0xFF1D4ED8)),
+                    ),
+                    SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Admin Menu',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          'College Bus Attendance System',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.directions_bus, color: Color(0xFF1D4ED8)),
+                  title: const Text('Buses & Fleet', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('Manage buses and route numbers'),
+                  selected: selectedIndex == 4,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    context.go('/admin/buses');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.schedule, color: Color(0xFFD97706)),
+                  title: const Text('Attendance Sessions', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('View and control morning & evening shifts'),
+                  selected: selectedIndex == 5,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    context.go('/admin/sessions');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.bar_chart, color: Color(0xFF7C3AED)),
+                  title: const Text('Reports & Analytics', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('Export CSV and view trends'),
+                  selected: selectedIndex == 6,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    context.go('/admin/reports');
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Color(0xFFDC2626)),
+                  title: const Text(
+                    'Logout Administrator',
+                    style: TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    ref.read(adminLoggedInProvider.notifier).state = false;
+                    ref.read(conductorInfoProvider.notifier).state = null;
+                    ref.read(currentAdminProfileProvider.notifier).state = null;
+                    await ref.read(authRepositoryProvider).signOut();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
-    final items = [
-      (
-        icon: Icons.dashboard_outlined,
-        activeIcon: Icons.dashboard,
-        label: 'Dashboard',
-        path: '/admin/dashboard',
-      ),
-      (
-        icon: Icons.badge_outlined,
-        activeIcon: Icons.badge,
-        label: 'Conductors',
-        path: '/admin/conductors',
-      ),
-      (
-        icon: Icons.qr_code_2_outlined,
-        activeIcon: Icons.qr_code_2,
-        label: 'Barcodes',
-        path: '/admin/barcodes',
-      ),
-      (
-        icon: Icons.people_outline,
-        activeIcon: Icons.people,
-        label: 'Students',
-        path: '/admin/students',
-      ),
-      (
-        icon: Icons.directions_bus_outlined,
-        activeIcon: Icons.directions_bus,
-        label: 'Buses',
-        path: '/admin/buses',
-      ),
-      (
-        icon: Icons.schedule_outlined,
-        activeIcon: Icons.schedule,
-        label: 'Sessions',
-        path: '/admin/sessions',
-      ),
-      (
-        icon: Icons.bar_chart_outlined,
-        activeIcon: Icons.bar_chart,
-        label: 'Reports',
-        path: '/admin/reports',
-      ),
-    ];
+    final isMobile = MediaQuery.of(context).size.width < 768;
     final selectedIndex = items.indexWhere((i) => location.startsWith(i.path));
 
+    if (isMobile) {
+      // ── MOBILE LAYOUT (Full Screen Child with Responsive Bottom Navigation) ──
+      final bottomNavIndex = selectedIndex < 0 ? 0 : (selectedIndex > 3 ? 4 : selectedIndex);
+
+      return Scaffold(
+        body: child,
+        bottomNavigationBar: NavigationBar(
+          height: 64,
+          elevation: 8,
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFDBEAFE),
+          selectedIndex: bottomNavIndex,
+          onDestinationSelected: (idx) {
+            if (idx == 4) {
+              _showMoreSheet(context, ref, selectedIndex);
+            } else {
+              context.go(items[idx].path);
+            }
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined, color: Color(0xFF334155)),
+              selectedIcon: Icon(Icons.dashboard, color: Color(0xFF1D4ED8)),
+              label: 'Dashboard',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.badge_outlined, color: Color(0xFF334155)),
+              selectedIcon: Icon(Icons.badge, color: Color(0xFF1D4ED8)),
+              label: 'Conductors',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.qr_code_2_outlined, color: Color(0xFF334155)),
+              selectedIcon: Icon(Icons.qr_code_2, color: Color(0xFF1D4ED8)),
+              label: 'Barcodes',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.people_outline, color: Color(0xFF334155)),
+              selectedIcon: Icon(Icons.people, color: Color(0xFF1D4ED8)),
+              label: 'Students',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.menu_rounded, color: Color(0xFF334155)),
+              selectedIcon: Icon(Icons.menu_open_rounded, color: Color(0xFF1D4ED8)),
+              label: 'More',
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── DESKTOP / TABLET LAYOUT (Side Navigation Rail) ───────────────────────
     return Scaffold(
       body: Row(
         children: [

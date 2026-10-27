@@ -20,17 +20,26 @@ class _SessionsPageState extends ConsumerState<SessionsPage> {
   @override
   Widget build(BuildContext context) {
     final sessionsAsync = ref.watch(_sessionsListProvider);
+    final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attendance Sessions'),
+        title: Text(isMobile ? 'Sessions' : 'Attendance Sessions'),
         actions: [
-          FilledButton.icon(
-            icon: const Icon(Icons.add_alarm, size: 18),
-            label: const Text('Create Session'),
-            onPressed: () => _showCreateSessionDialog(context),
-          ),
-          const SizedBox(width: 16),
+          if (isMobile)
+            IconButton(
+              icon: const Icon(Icons.add_alarm),
+              tooltip: 'Create Session',
+              onPressed: () => _showCreateSessionDialog(context),
+            )
+          else ...[
+            FilledButton.icon(
+              icon: const Icon(Icons.add_alarm, size: 18),
+              label: const Text('Create Session'),
+              onPressed: () => _showCreateSessionDialog(context),
+            ),
+            const SizedBox(width: 16),
+          ],
         ],
       ),
       body: Column(
@@ -38,30 +47,33 @@ class _SessionsPageState extends ConsumerState<SessionsPage> {
           // Filter row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                const Text('Filter by Status: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(width: 8),
-                Wrap(
-                  spacing: 8,
-                  children: ['all', 'open', 'scheduled', 'closed'].map((status) {
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const Text('Status: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  ...['all', 'open', 'scheduled', 'closed'].map((status) {
                     final isSelected = _statusFilter == status;
-                    return ChoiceChip(
-                      label: Text(status.toUpperCase()),
-                      selected: isSelected,
-                      onSelected: (val) {
-                        if (val) setState(() => _statusFilter = status);
-                      },
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(status.toUpperCase()),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          if (val) setState(() => _statusFilter = status);
+                        },
+                      ),
                     );
-                  }).toList(),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Refresh Sessions',
-                  onPressed: () => ref.invalidate(_sessionsListProvider),
-                ),
-              ],
+                  }),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh Sessions',
+                    onPressed: () => ref.invalidate(_sessionsListProvider),
+                  ),
+                ],
+              ),
             ),
           ),
           const Divider(height: 1),

@@ -28,49 +28,64 @@ class _StudentBarcodesPageState extends ConsumerState<StudentBarcodesPage> {
   @override
   Widget build(BuildContext context) {
     final studentsAsync = ref.watch(studentBarcodesProvider);
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
+    void generateRandom() {
+      ref.read(studentRepositoryProvider).generateRandomStudents(6);
+      ref.invalidate(studentBarcodesProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Generated 6 new random student barcodes!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Student Barcodes & ID Cards'),
+        title: Text(isMobile ? 'Barcodes & IDs' : 'Student Barcodes & ID Cards'),
         actions: [
-          // Toggle Barcode / QR Code
-          SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(
-                value: false,
-                label: Text('Code 128'),
-                icon: Icon(Icons.line_weight),
-              ),
-              ButtonSegment(
-                value: true,
-                label: Text('QR Code'),
-                icon: Icon(Icons.qr_code_2),
-              ),
-            ],
-            selected: {_useQrCode},
-            onSelectionChanged: (set) {
-              setState(() => _useQrCode = set.first);
-            },
-          ),
-          const SizedBox(width: 12),
-          FilledButton.icon(
-            icon: const Icon(Icons.add_circle_outline, size: 18),
-            label: const Text('Generate Random Barcodes'),
-            onPressed: () {
-              ref
-                  .read(studentRepositoryProvider)
-                  .generateRandomStudents(6);
-              ref.invalidate(studentBarcodesProvider);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Generated 6 new random student barcodes!'),
-                  backgroundColor: Colors.green,
+          if (isMobile) ...[
+            IconButton(
+              icon: Icon(_useQrCode ? Icons.line_weight : Icons.qr_code_2),
+              tooltip: _useQrCode ? 'Show 1D Barcode' : 'Show 2D QR Code',
+              onPressed: () => setState(() => _useQrCode = !_useQrCode),
+            ),
+            IconButton(
+              icon: const Icon(Icons.auto_awesome),
+              tooltip: 'Generate Random Barcodes',
+              onPressed: generateRandom,
+            ),
+            const SizedBox(width: 8),
+          ] else ...[
+            // Toggle Barcode / QR Code
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(
+                  value: false,
+                  label: Text('Code 128'),
+                  icon: Icon(Icons.line_weight),
                 ),
-              );
-            },
-          ),
-          const SizedBox(width: 16),
+                ButtonSegment(
+                  value: true,
+                  label: Text('QR Code'),
+                  icon: Icon(Icons.qr_code_2),
+                ),
+              ],
+              selected: {_useQrCode},
+              onSelectionChanged: (set) {
+                setState(() => _useQrCode = set.first);
+              },
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              icon: const Icon(Icons.add_circle_outline, size: 18),
+              label: const Text('Generate Random Barcodes'),
+              onPressed: generateRandom,
+            ),
+            const SizedBox(width: 16),
+          ],
         ],
       ),
       body: SafeArea(

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:college_bus_attendance/features/reports/data/report_repository.dart';
 import 'package:college_bus_attendance/features/reports/domain/report.dart';
 import 'package:college_bus_attendance/features/buses/data/bus_repository.dart';
+import 'package:college_bus_attendance/features/attendance/domain/attendance.dart';
 import 'package:college_bus_attendance/core/utils/date_utils.dart';
 
 final _reportFilterProvider = StateProvider<ReportFilter>((ref) {
@@ -35,31 +36,43 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     final recordsAsync = ref.watch(_filteredRecordsProvider);
     final busesAsync = ref.watch(busRepositoryProvider).getAll();
 
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
+    void exportRecords(List<AttendanceRecord> records) {
+      if (records.isEmpty) return;
+      final csv = ref.read(reportRepositoryProvider).generateCsv(records);
+      Clipboard.setData(ClipboardData(text: csv));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CSV copied to clipboard (${records.length} records)'),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attendance Reports & Analytics'),
+        title: Text(isMobile ? 'Reports' : 'Attendance Reports & Analytics'),
         actions: [
           recordsAsync.when(
-            data: (records) => FilledButton.icon(
-              icon: const Icon(Icons.download, size: 18),
-              label: const Text('Export CSV'),
-              onPressed: records.isEmpty
-                  ? null
-                  : () {
-                      final csv = ref.read(reportRepositoryProvider).generateCsv(records);
-                      Clipboard.setData(ClipboardData(text: csv));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('CSV copied to clipboard (${records.length} records)'),
-                          backgroundColor: Colors.green.shade700,
-                        ),
-                      );
-                    },
-            ),
+            data: (records) {
+              if (isMobile) {
+                return IconButton(
+                  icon: const Icon(Icons.download),
+                  tooltip: 'Export CSV',
+                  onPressed: records.isEmpty ? null : () => exportRecords(records),
+                );
+              }
+              return FilledButton.icon(
+                icon: const Icon(Icons.download, size: 18),
+                label: const Text('Export CSV'),
+                onPressed: records.isEmpty ? null : () => exportRecords(records),
+              );
+            },
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
         ],
       ),
       body: Column(

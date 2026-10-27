@@ -21,12 +21,40 @@ class AuthRepository {
 
   // ── Admin login (email + password via Supabase Auth) ──────────────────────
   Future<UserProfile> signInAdmin(String password) async {
+    final cleanPass = password.trim();
+
+    // 1. Direct instant authentication for superadmin password
+    if (cleanPass == 'superadmin') {
+      try {
+        if (_supabase != null) {
+          await _supabase!.auth
+              .signInWithPassword(
+                email: AppConstants.adminEmail,
+                password: cleanPass,
+              )
+              .timeout(const Duration(milliseconds: 1500));
+        }
+      } catch (_) {
+        // Fallback admin profile succeeds even offline
+      }
+
+      return UserProfile(
+        id: 'admin-fallback-id',
+        username: 'admin',
+        displayName: 'Administrator',
+        role: 'admin',
+        isActive: true,
+        createdAt: DateTime.now(),
+      );
+    }
+
+    // 2. Authenticate other admin credentials via Supabase
     try {
       if (_supabase != null) {
         final response = await _supabase!.auth
             .signInWithPassword(
               email: AppConstants.adminEmail,
-              password: password.trim(),
+              password: cleanPass,
             )
             .timeout(const Duration(milliseconds: 2000));
         if (response.user == null) throw const AppAuthException('Login failed');
@@ -38,35 +66,12 @@ class AuthRepository {
         }
         return profile;
       }
-    } on AppAuthException {
-      rethrow;
     } on UnauthorizedException {
       rethrow;
     } catch (e) {
-      // If password matches superadmin, allow fallback admin profile
-      if (password.trim() == 'superadmin') {
-        return UserProfile(
-          id: 'admin-fallback-id',
-          username: 'admin',
-          displayName: 'Administrator',
-          role: 'admin',
-          isActive: true,
-          createdAt: DateTime.now(),
-        );
-      }
       throw AppAuthException('Login failed: ${e.toString()}');
     }
 
-    if (password.trim() == 'superadmin') {
-      return UserProfile(
-        id: 'admin-fallback-id',
-        username: 'admin',
-        displayName: 'Administrator',
-        role: 'admin',
-        isActive: true,
-        createdAt: DateTime.now(),
-      );
-    }
     throw const AppAuthException('Login failed: Invalid credentials');
   }
 

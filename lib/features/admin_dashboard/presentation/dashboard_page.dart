@@ -122,72 +122,94 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
+  Future<void> _pickDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.parse(_selectedDate),
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => _selectedDate = picked.toIso8601String().split('T')[0]);
+      _loadData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          // Live pulse badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(radius: 4, backgroundColor: Colors.green),
-                SizedBox(width: 6),
-                Text(
-                  'LIVE SYNC',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.green,
-                    letterSpacing: 0.6,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Dashboard'),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(radius: 3.5, backgroundColor: Colors.green),
+                  SizedBox(width: 5),
+                  Text(
+                    'LIVE',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.green,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-
-          // Export CSV button
-          FilledButton.tonalIcon(
-            icon: const Icon(Icons.download, size: 18),
-            label: const Text('Export CSV'),
-            onPressed: _exportCsv,
-          ),
-          const SizedBox(width: 8),
-
-          // Date picker
-          TextButton.icon(
-            icon: const Icon(Icons.calendar_today, size: 18),
-            label: Text(AppDateUtils.formatDateStr(_selectedDate)),
-            onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.parse(_selectedDate),
-                firstDate: DateTime(2024),
-                lastDate: DateTime.now(),
-              );
-              if (picked != null) {
-                setState(() => _selectedDate =
-                    picked.toIso8601String().split('T')[0]);
-                _loadData();
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Manual Refresh',
-            onPressed: () => _loadData(),
-          ),
-          const SizedBox(width: 8),
+          ],
+        ),
+        actions: [
+          if (isMobile) ...[
+            IconButton(
+              icon: const Icon(Icons.file_download_outlined),
+              tooltip: 'Export CSV',
+              onPressed: _exportCsv,
+            ),
+            IconButton(
+              icon: const Icon(Icons.calendar_month_outlined),
+              tooltip: 'Pick Date: ${AppDateUtils.formatDateStr(_selectedDate)}',
+              onPressed: () => _pickDate(context),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: () => _loadData(),
+            ),
+            const SizedBox(width: 4),
+          ] else ...[
+            FilledButton.tonalIcon(
+              icon: const Icon(Icons.download, size: 18),
+              label: const Text('Export CSV'),
+              onPressed: _exportCsv,
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              icon: const Icon(Icons.calendar_today, size: 18),
+              label: Text(AppDateUtils.formatDateStr(_selectedDate)),
+              onPressed: () => _pickDate(context),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Manual Refresh',
+              onPressed: () => _loadData(),
+            ),
+            const SizedBox(width: 8),
+          ],
         ],
       ),
       body: _loading

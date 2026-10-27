@@ -58,13 +58,14 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
       _adminLoading = true;
       _adminError = null;
     });
-
     try {
       final password = _adminPasswordCtrl.text.trim();
       final profile = await ref.read(authRepositoryProvider).signInAdmin(password);
+      ref.read(conductorInfoProvider.notifier).state = null;
       ref.read(adminLoggedInProvider.notifier).state = true;
       ref.read(currentAdminProfileProvider.notifier).state = profile;
       if (mounted) {
+        setState(() => _adminLoading = false);
         context.go('/admin/dashboard');
       }
     } catch (e) {
@@ -80,7 +81,6 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
   @override
   Widget build(BuildContext context) {
     final conductorState = ref.watch(conductorLoginProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -105,22 +105,38 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                     children: [
                       // Role Selector Tabs (Conductor vs Admin)
                       SegmentedButton<String>(
-                        style: SegmentedButton.styleFrom(
-                          selectedBackgroundColor: theme.colorScheme.primary,
-                          selectedForegroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return const Color(0xFF1565C0);
+                            }
+                            return const Color(0xFFF1F5F9);
+                          }),
+                          foregroundColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return Colors.white;
+                            }
+                            return const Color(0xFF0F172A);
+                          }),
+                          textStyle: WidgetStateProperty.all(
+                            const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                          ),
+                          shape: WidgetStateProperty.all(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: Color(0xFF94A3B8), width: 1.5),
+                            ),
                           ),
                         ),
                         segments: const [
                           ButtonSegment(
                             value: 'conductor',
-                            label: Text('Conductor'),
+                            label: Text('Conductor Mode'),
                             icon: Icon(Icons.directions_bus),
                           ),
                           ButtonSegment(
                             value: 'admin',
-                            label: Text('Admin'),
+                            label: Text('Admin Mode'),
                             icon: Icon(Icons.admin_panel_settings),
                           ),
                         ],
@@ -132,36 +148,39 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                           });
                         },
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
                       if (_mode == 'conductor') ...[
                         // ── CONDUCTOR LOGIN VIEW ─────────────────────────────
                         Center(
                           child: CircleAvatar(
                             radius: 32,
-                            backgroundColor: theme.colorScheme.primaryContainer,
-                            child: Icon(Icons.directions_bus_rounded,
-                                size: 36, color: theme.colorScheme.primary),
+                            backgroundColor: const Color(0xFFDBEAFE),
+                            child: const Icon(Icons.directions_bus_rounded,
+                                size: 36, color: Color(0xFF1D4ED8)),
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        Text(
+                        const SizedBox(height: 12),
+                        const Text(
                           'Conductor Duty Login',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
+                        const SizedBox(height: 6),
+                        const Text(
                           'Enter your static credentials and your assigned bus number for today',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF64748B),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF334155),
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
                         Form(
                           key: _conductorFormKey,
@@ -170,46 +189,124 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                               TextFormField(
                                 controller: _usernameCtrl,
                                 textInputAction: TextInputAction.next,
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                                 decoration: const InputDecoration(
                                   labelText: 'Static Username',
+                                  labelStyle: TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                   hintText: 'e.g. conductor1',
-                                  prefixIcon: Icon(Icons.person_outline),
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  prefixIcon: Icon(Icons.person, color: Color(0xFF1E293B)),
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    borderSide: BorderSide(color: Color(0xFF64748B), width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    borderSide: BorderSide(color: Color(0xFF1565C0), width: 2.2),
+                                  ),
                                 ),
                                 validator: (v) =>
-                                    v == null || v.trim().isEmpty ? 'Required' : null,
+                                    v == null || v.trim().isEmpty ? 'Username required' : null,
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
                                 controller: _busCtrl,
                                 textInputAction: TextInputAction.next,
                                 textCapitalization: TextCapitalization.characters,
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                                 decoration: const InputDecoration(
                                   labelText: 'Bus Number Today',
+                                  labelStyle: TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                   hintText: 'e.g. BUS-01, V1, K1',
-                                  helperText: 'Enter whichever bus you are operating',
-                                  prefixIcon: Icon(Icons.directions_bus_outlined),
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  helperText: 'Enter whichever bus you are operating today',
+                                  helperStyle: TextStyle(
+                                    color: Color(0xFF1E3A8A),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                  prefixIcon: Icon(Icons.directions_bus_filled, color: Color(0xFF1E293B)),
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    borderSide: BorderSide(color: Color(0xFF64748B), width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    borderSide: BorderSide(color: Color(0xFF1565C0), width: 2.2),
+                                  ),
                                 ),
                                 validator: (v) =>
-                                    v == null || v.trim().isEmpty ? 'Required' : null,
+                                    v == null || v.trim().isEmpty ? 'Bus Number required' : null,
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
                                 controller: _conductorPasswordCtrl,
                                 obscureText: _obscureConductor,
                                 onFieldSubmitted: (_) => _loginConductor(),
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                                 decoration: InputDecoration(
                                   labelText: 'Static Password',
-                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  labelStyle: const TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  hintText: 'conductor123',
+                                  hintStyle: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  prefixIcon: const Icon(Icons.lock, color: Color(0xFF1E293B)),
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  enabledBorder: const OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    borderSide: BorderSide(color: Color(0xFF64748B), width: 1.5),
+                                  ),
+                                  focusedBorder: const OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    borderSide: BorderSide(color: Color(0xFF1565C0), width: 2.2),
+                                  ),
                                   suffixIcon: IconButton(
-                                    icon: Icon(_obscureConductor
-                                        ? Icons.visibility
-                                        : Icons.visibility_off),
+                                    icon: Icon(
+                                      _obscureConductor
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: const Color(0xFF1E293B),
+                                    ),
                                     onPressed: () => setState(() =>
                                         _obscureConductor = !_obscureConductor),
                                   ),
                                 ),
                                 validator: (v) =>
-                                    v == null || v.isEmpty ? 'Required' : null,
+                                    v == null || v.isEmpty ? 'Password required' : null,
                               ),
                             ],
                           ),
@@ -222,12 +319,15 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF2F2),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFFECACA)),
+                              border: Border.all(color: const Color(0xFFEF4444), width: 1.5),
                             ),
                             child: Text(
                               conductorState.error!,
                               style: const TextStyle(
-                                  color: Color(0xFFDC2626), fontSize: 13),
+                                color: Color(0xFFB91C1C),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -237,6 +337,8 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                           onPressed:
                               conductorState.loading ? null : _loginConductor,
                           style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF1565C0),
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -249,13 +351,17 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2, color: Colors.white),
                                 )
-                              : const Text('Start Bus Duty / Login',
+                              : const Text(
+                                  'Start Bus Duty / Login',
                                   style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w600)),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                       ] else ...[
                         // ── ADMIN LOGIN VIEW ─────────────────────────────────
-                        // (Only password field — superadmin — no username or bus required!)
                         Center(
                           child: CircleAvatar(
                             radius: 32,
@@ -264,24 +370,54 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                                 size: 36, color: Color(0xFF2563EB)),
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        Text(
+                        const SizedBox(height: 12),
+                        const Text(
                           'Administrator Access',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
+                        const SizedBox(height: 6),
+                        const Text(
                           'Enter superadmin password to access dashboard',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF64748B),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF334155),
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 16),
+
+                        // Tip box
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF93C5FD), width: 1.5),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.vpn_key_rounded, color: Color(0xFF1D4ED8), size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Password: superadmin\n(No username or bus number required)',
+                                  style: TextStyle(
+                                    color: Color(0xFF1E3A8A),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
 
                         Form(
                           key: _adminFormKey,
@@ -290,20 +426,46 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                             obscureText: _obscureAdmin,
                             autofocus: true,
                             onFieldSubmitted: (_) => _loginAdmin(),
+                            style: const TextStyle(
+                              color: Color(0xFF0F172A),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Admin Password',
+                              labelStyle: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.w700,
+                              ),
                               hintText: 'superadmin',
-                              prefixIcon: const Icon(Icons.key_rounded),
+                              hintStyle: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              prefixIcon: const Icon(Icons.key_rounded, color: Color(0xFF1E293B)),
+                              fillColor: Colors.white,
+                              filled: true,
+                              enabledBorder: const OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                                borderSide: BorderSide(color: Color(0xFF64748B), width: 1.5),
+                              ),
+                              focusedBorder: const OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                                borderSide: BorderSide(color: Color(0xFF1565C0), width: 2.2),
+                              ),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscureAdmin
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
+                                icon: Icon(
+                                  _obscureAdmin
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: const Color(0xFF1E293B),
+                                ),
                                 onPressed: () =>
                                     setState(() => _obscureAdmin = !_obscureAdmin),
                               ),
                             ),
                             validator: (v) =>
-                                v == null || v.isEmpty ? 'Required' : null,
+                                v == null || v.isEmpty ? 'Admin password required' : null,
                           ),
                         ),
 
@@ -314,21 +476,25 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF2F2),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFFECACA)),
+                              border: Border.all(color: const Color(0xFFEF4444), width: 1.5),
                             ),
                             child: Text(
                               _adminError!,
                               style: const TextStyle(
-                                  color: Color(0xFFDC2626), fontSize: 13),
+                                color: Color(0xFFB91C1C),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 24),
 
                         FilledButton(
                           onPressed: _adminLoading ? null : _loginAdmin,
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF2563EB),
+                            backgroundColor: const Color(0xFF1D4ED8),
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -341,9 +507,14 @@ class _ConductorLoginPageState extends ConsumerState<ConductorLoginPage> {
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2, color: Colors.white),
                                 )
-                              : const Text('Login as Admin',
+                              : const Text(
+                                  'Login as Admin',
                                   style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w600)),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                       ],
                     ],

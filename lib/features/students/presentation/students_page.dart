@@ -21,25 +21,47 @@ class _StudentsPageState extends ConsumerState<StudentsPage> {
   @override
   Widget build(BuildContext context) {
     final studentsAsync = ref.watch(_studentsProvider);
+    final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Student Management'),
+        title: Text(isMobile ? 'Students' : 'Student Management'),
         actions: [
-          FilledButton.icon(
-            icon: const Icon(Icons.upload_file, size: 18),
-            label: const Text('Import CSV'),
-            onPressed: () => context.push('/admin/students/import'),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.tonalIcon(
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add Student'),
-            onPressed: () => _showStudentDialog(context, null),
-          ),
-          const SizedBox(width: 12),
+          if (isMobile) ...[
+            IconButton(
+              icon: const Icon(Icons.upload_file_outlined),
+              tooltip: 'Import CSV',
+              onPressed: () => context.push('/admin/students/import'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_add_alt_1),
+              tooltip: 'Add Student',
+              onPressed: () => _showStudentDialog(context, null),
+            ),
+            const SizedBox(width: 8),
+          ] else ...[
+            FilledButton.icon(
+              icon: const Icon(Icons.upload_file, size: 18),
+              label: const Text('Import CSV'),
+              onPressed: () => context.push('/admin/students/import'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.tonalIcon(
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Student'),
+              onPressed: () => _showStudentDialog(context, null),
+            ),
+            const SizedBox(width: 12),
+          ],
         ],
       ),
+      floatingActionButton: isMobile
+          ? FloatingActionButton.extended(
+              icon: const Icon(Icons.person_add_alt_1),
+              label: const Text('Add Student'),
+              onPressed: () => _showStudentDialog(context, null),
+            )
+          : null,
       body: Column(
         children: [
           Padding(

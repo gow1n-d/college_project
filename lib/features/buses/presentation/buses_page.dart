@@ -38,10 +38,11 @@ class _BusesPageState extends ConsumerState<BusesPage> with SingleTickerProvider
   Widget build(BuildContext context) {
     final busesAsync = ref.watch(_busesProvider);
     final assignmentsAsync = ref.watch(_assignmentsProvider);
+    final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bus & Conductor Fleet'),
+        title: Text(isMobile ? 'Fleet & Buses' : 'Bus & Conductor Fleet'),
         bottom: TabBar(
           controller: _tabController,
           tabAlignment: TabAlignment.start,
@@ -70,18 +71,32 @@ class _BusesPageState extends ConsumerState<BusesPage> with SingleTickerProvider
           ],
         ),
         actions: [
-          FilledButton.tonalIcon(
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add Bus'),
-            onPressed: () => _showBusDialog(context, null),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            icon: const Icon(Icons.person_add, size: 18),
-            label: const Text('Assign Conductor'),
-            onPressed: () => _showAssignDialog(context),
-          ),
-          const SizedBox(width: 16),
+          if (isMobile) ...[
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              tooltip: 'Add Bus',
+              onPressed: () => _showBusDialog(context, null),
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_add_outlined),
+              tooltip: 'Assign Conductor',
+              onPressed: () => _showAssignDialog(context),
+            ),
+            const SizedBox(width: 8),
+          ] else ...[
+            FilledButton.tonalIcon(
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Bus'),
+              onPressed: () => _showBusDialog(context, null),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              icon: const Icon(Icons.person_add, size: 18),
+              label: const Text('Assign Conductor'),
+              onPressed: () => _showAssignDialog(context),
+            ),
+            const SizedBox(width: 16),
+          ],
         ],
       ),
       body: TabBarView(
