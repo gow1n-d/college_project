@@ -1,0 +1,5 @@
+// CSV import template — do not modify column headers
+roll_number,name,academic_year,department
+23AD001,Student One,III Year,AI&DS
+23AD002,Student Two,III Year,CSE
+24AD001,Student Three,II Year,ECE
